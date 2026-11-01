@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102b50">
+<meta name="description" content="Calendar-based daily study diary and syllabus progress for OPSC OAS, OES and OAV PGT Mathematics.">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>My Study Planner</title>
+<style>
+:root{--navy:#102b50;--blue:#1f4f91;--gold:#e4a927;--bg:#f3f6fb;--card:#fff;--ink:#1c2b40;--muted:#6e7e91;--line:#e1e8f1;--soft:#eaf1fa;--green:#1d7657;--greenbg:#e9f6ef;--orange:#a65c19;--orangebg:#fff3e5;--red:#a53f45}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(125deg,#0b2140,#173f73);color:#fff;padding:20px 16px 17px;border-bottom:4px solid var(--gold)}
+.wrap{max-width:1020px;margin:auto}.eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:10px;opacity:.8}h1{font-size:24px;margin:4px 0}header p{margin:0;color:#dce8f7;font-size:13px}
+nav{display:flex;gap:7px;overflow-x:auto;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;scrollbar-width:thin}
+nav button{white-space:nowrap;background:#f1f4f8;color:#52647a;padding:9px 12px}nav button.active{background:var(--navy);color:#fff}
+main{padding:15px 12px 44px;overflow-x:hidden}.page{display:none}.page.active{display:block}
+/* Clearly visible horizontal page transitions on Android */
+main{position:relative;overflow:hidden;touch-action:pan-y pinch-zoom}
+.page.active.page-enter-next{animation:pageSlideNext .42s cubic-bezier(.2,.75,.25,1) both;will-change:transform}
+.page.active.page-enter-prev{animation:pageSlidePrev .42s cubic-bezier(.2,.75,.25,1) both;will-change:transform}
+@keyframes pageSlideNext{from{transform:translate3d(100%,0,0)}to{transform:translate3d(0,0,0)}}
+@keyframes pageSlidePrev{from{transform:translate3d(-100%,0,0)}to{transform:translate3d(0,0,0)}}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card,.panel{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:12px;box-shadow:0 3px 12px #17385d0a}
+.metric{font-size:25px;font-weight:780;color:var(--navy)}.muted{color:var(--muted);font-size:12px}.section-title{font-size:17px;font-weight:750;margin:3px 0 10px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.progress{height:8px;background:#e9eef5;border-radius:20px;overflow:hidden;margin:8px 0}.progress span{display:block;height:100%;background:var(--blue);width:0}
+button{border:0;border-radius:10px;padding:10px 13px;font-weight:650;cursor:pointer;background:#edf2f8;color:var(--ink);font-size:13px}button.primary{background:var(--navy);color:white}button.accent{background:var(--gold);color:#192b44}button.warn{background:#fff0e9;color:#994d22}button:disabled{opacity:.5}
+.pill{font-size:10px;padding:4px 8px;border-radius:20px;background:var(--soft);color:var(--blue);white-space:nowrap;font-weight:700}.pill.green{background:var(--greenbg);color:var(--green)}.pill.orange{background:var(--orangebg);color:var(--orange)}
+input,select,textarea{font:inherit;border:1px solid #d9e2ed;border-radius:9px;padding:10px;background:#fff;color:var(--ink);width:100%;min-width:0}
+textarea{resize:vertical}label.field{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.empty{color:var(--muted);font-size:13px;padding:12px 0}
+.inline-check{display:flex;align-items:flex-start;gap:9px;font-size:13px;margin:10px 0}.inline-check input{width:18px;height:18px;flex:none;margin:0;accent-color:var(--green)}.buttonlike{display:inline-block;border-radius:10px;padding:10px 13px;background:#edf2f8;color:var(--ink);font-size:13px;font-weight:650;cursor:pointer}
+/* Calendar */
+.calendar-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.month-name{font-size:19px;font-weight:780;color:var(--navy)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.cal-weekday{text-align:center;color:var(--muted);font-size:11px;font-weight:700;padding:5px 0}
+.cal-day{min-height:58px;padding:6px 2px;border:1px solid var(--line);border-radius:10px;background:white;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;color:var(--ink);position:relative}
+.cal-day.empty{visibility:hidden}.cal-day .daynum{font-size:13px;font-weight:700}.cal-day.selected{border:2px solid var(--blue);background:#edf4ff;padding:5px 1px}.cal-day.today .daynum{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+.cal-day .calmeta{font-size:9px;color:var(--muted);line-height:1}.cal-day .dot{height:5px;width:5px;border-radius:50%;background:var(--gold);display:inline-block}.cal-day.has-entries .dot{background:var(--green)}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:10px}.legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px}.legend-dot.gold{background:var(--gold)}
+.daily-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.mini-stat{background:#f5f8fc;border:1px solid var(--line);border-radius:10px;padding:9px}.mini-stat b{display:block;font-size:17px;color:var(--navy)}.mini-stat span{font-size:10px;color:var(--muted)}
+/* Log rows and syllabus */
+.entry{border:1px solid var(--line);border-radius:12px;padding:11px;margin:9px 0;background:#fff}.entry-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.entry-title{font-weight:750;font-size:14px}.entry-meta{font-size:11px;color:var(--muted);margin-top:3px}.entry-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}
+.entry.completed{border-left:4px solid var(--green)}.entry.pending{border-left:4px solid var(--gold)}
+.area-row{border:1px solid var(--line);border-radius:11px;padding:10px;margin:8px 0;background:#fff}.area-title{font-size:13px;font-weight:700}.area-meta{font-size:11px;color:var(--muted);margin-top:3px}
+details.section{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}details.section summary{cursor:pointer;padding:12px;font-weight:750;background:#f7f9fc;display:flex;justify-content:space-between;gap:8px;list-style:none}details.section summary::-webkit-details-marker{display:none}.section-body{padding:4px 10px 10px}
+.topic-line{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid #eef2f6}.topic-line:last-child{border:0}.topic-line input{width:17px;height:17px;flex:none;accent-color:var(--green);margin:1px 0 0}.topic-line span{font-size:12px;flex:1}
+.barline{display:flex;align-items:center;gap:10px;margin:9px 0}.barline .label{width:105px;font-size:12px}.barline .bar{flex:1;height:9px;border-radius:20px;background:#edf1f6;overflow:hidden}.barline .bar i{display:block;height:100%;background:var(--blue)}.barline b{font-size:11px;width:42px;text-align:right}
+.routine-row{display:grid;grid-template-columns:105px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.routine-row time{font-weight:750;color:var(--blue)}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:15px}
+@media(max-width:620px){.grid.three{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.cal-day{min-height:50px}.routine-row{grid-template-columns:88px 1fr}}
+@media(max-width:390px){.grid.three{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.cal-day{min-height:45px}.daily-summary{gap:5px}}
+.timer-panel{border:1px solid var(--line);border-radius:14px;padding:15px;margin:10px 0 18px;background:var(--soft)}
+.timer-display{font-size:clamp(30px,7vw,42px);font-weight:800;letter-spacing:1px;font-variant-numeric:tabular-nums;margin:6px 0;color:var(--ink)}
+.timer-running{color:var(--green)}.timer-meta{font-size:13px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="eyebrow">Your preparation, one day at a time</div><h1>My Study Planner</h1><p>OPSC OAS • Odisha Education Service • OAV PGT Mathematics</p></div></header>
+<nav class="wrap">
+<button class="active" data-page="dashboard">Overview</button>
+<button data-page="calendar">Calendar & Daily Log</button>
+<button data-page="syllabus">Syllabus Progress</button>
+<button data-page="routine">Daily Routine</button>
+<button data-page="reports">Growth Reports</button>
+<button data-page="backup">Backup</button>
+</nav>
+<main class="wrap">
+
+<section class="page active" id="dashboard">
+ <div class="row" style="margin:0 2px 12px"><div><b id="todayLabel"></b><div class="muted">Your preparation is measured by what you actually study each day.</div></div><span class="pill">Daily growth</span></div>
+ <div class="grid three">
+  <div class="card"><div class="muted">Study time today</div><div class="metric" id="todayHours">0h</div><div class="muted" id="todayMinutesHint">No sessions logged today</div></div>
+  <div class="card"><div class="muted">Topics completed today</div><div class="metric" id="todayTopics">0</div><div class="muted">Marked completed in your daily log</div></div>
+  <div class="card"><div class="muted">Days studied this month</div><div class="metric" id="monthDays">0</div><div class="muted" id="monthHours">0 study hours this month</div></div>
+ </div>
+ <div class="panel"><div class="row"><div class="section-title">Today's progress</div><button class="primary" onclick="showPage('calendar')">Open today's log</button></div><div id="dashProgress"></div></div>
+ <div class="panel"><div class="section-title">Your main preparation priorities</div>
+  <div class="row"><b>OPSC OAS + OES</b><span class="pill">Primary</span></div><p class="muted">Keep General Studies, Education-specific preparation and descriptive writing moving together.</p>
+  <div class="row"><b>OAV PGT Mathematics</b><span class="pill">Parallel preparation</span></div><p class="muted">Build foundations and record every chapter, problem set and revision session.</p>
+ </div>
+ <div class="panel"><div class="section-title">Recent study activity</div><div id="recentActivity"></div></div>
+</section>
+
+<section class="page" id="calendar">
+ <div class="panel">
+  <div class="calendar-head"><button onclick="changeMonth(-1)" aria-label="Previous month">‹</button><div class="month-name" id="monthTitle">Month</div><div class="actions" style="margin:0"><button onclick="goToday()">Today</button><button onclick="changeMonth(1)" aria-label="Next month">›</button></div></div>
+  <div class="cal-grid" id="calendarGrid"></div>
+  <div class="cal-legend"><span><i class="legend-dot"></i> Study logged</span><span><i class="legend-dot gold"></i> Daily task or note</span></div>
+  <div class="daily-summary" id="monthSummary"></div>
+ </div>
+ <div class="panel" id="dayPanel">
+  <div class="row"><div><div class="section-title" id="selectedDateTitle">Daily record</div><div class="muted">Choose any date in the calendar to review or add its study record.</div></div><span class="pill" id="dayStatus">No entry yet</span></div>
+  <div class="daily-summary" id="dayStats"></div>
+  <div class="section-title">1. Daily checklist</div>
+  <div class="muted">Add the tasks you plan to complete. Tick them during the day; your progress is saved against this date.</div>
+  <div id="dailyTaskList"></div>
+  <div class="formgrid" style="margin-top:8px"><div><input id="newDailyTask" placeholder="Add a task for this day"></div><div><button class="primary" style="width:100%" onclick="addDailyTask()">Add task</button></div></div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+  <div class="section-title">2. Study timer</div>
+  <div class="timer-panel" id="studyTimerPanel">
+   <div class="row"><div><b id="timerState">Ready to study?</b><div class="timer-meta" id="timerDescription">Fill in the session details below, then start the timer.</div></div><span class="pill" id="timerBadge">Not started</span></div>
+   <div class="timer-display" id="timerDisplay">00:00:00</div>
+   <div class="actions"><button class="primary" id="startTimerButton" onclick="startStudyTimer()">▶ Start studying</button><button class="warn" id="endTimerButton" onclick="endStudyTimer()" style="display:none">■ End session &amp; save</button></div>
+   <div class="timer-meta" style="margin-top:8px">The timer keeps running if you switch apps or lock your phone. When you return, elapsed time is recalculated automatically.</div>
+  </div>
+  <div class="section-title">3. Session details</div>
+  <p class="muted">Choose the syllabus area and enter the actual topic or chapter before starting. When you finish, tap End session &amp; save; the duration will be recorded automatically.</p>
+  <div class="formgrid">
+   <div><label class="field">Examination</label><select id="entryExam" onchange="updateAreaOptions()"><option value="oas">OPSC OAS</option><option value="oes">OES</option><option value="pgt">OAV PGT Mathematics</option></select></div>
+   <div><label class="field">Syllabus section</label><select id="entrySection" onchange="updateAreaOptions()"></select></div>
+   <div style="grid-column:1/-1"><label class="field">Syllabus area</label><select id="entryArea"></select></div>
+   <div style="grid-column:1/-1"><label class="field">Actual topic / chapter studied</label><input id="entryTopic" placeholder="e.g. Fundamental Rights — Articles 14 to 18"></div>
+   <div><label class="field">Study activity</label><select id="entryMode"><option>New learning</option><option>Revision</option><option>Problem practice</option><option>Answer writing</option><option>Mock / test analysis</option><option>Current affairs reading</option></select></div>
+   <div><label class="field">Duration (minutes)</label><input id="entryMinutes" type="number" min="1" value="60"></div>
+  </div>
+  <label class="field">Notes (optional)</label><textarea id="entryNotes" rows="2" placeholder="What did you understand? What should you revisit?"></textarea>
+  <label class="inline-check"><input type="checkbox" id="entryDone"> I completed this specific topic today. Tick it in my syllabus progress.</label>
+  <div class="actions"><button class="primary" onclick="saveEntry()">Save study session</button><button onclick="clearEntryForm()">Clear form</button></div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+  <div class="row"><div class="section-title">3. What I studied on this date</div><span class="pill" id="entryCount">0 sessions</span></div>
+  <div id="dayEntries"></div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+  <div class="section-title">4. End-of-day reflection</div>
+  <div class="formgrid">
+   <div style="grid-column:1/-1"><label class="field">What did I cover / learn today?</label><textarea id="journalLearn" rows="2" placeholder="Write a short summary of today's learning."></textarea></div>
+   <div style="grid-column:1/-1"><label class="field">What needs revision?</label><textarea id="journalRevise" rows="2" placeholder="Concepts, questions or facts to revisit."></textarea></div>
+   <div style="grid-column:1/-1"><label class="field">Priority for tomorrow</label><textarea id="journalNext" rows="2" placeholder="The most important thing to study next."></textarea></div>
+   <div><label class="field">How was today's focus?</label><select id="journalFocus"><option value="">Choose</option><option>Excellent</option><option>Good</option><option>Average</option><option>Distracted</option></select></div>
+  </div>
+  <div class="actions"><button class="primary" onclick="saveJournal()">Save end-of-day review</button></div><div class="muted" id="journalStatus"></div>
+ </div>
+</section>
+
+<section class="page" id="syllabus">
+ <div class="panel"><div class="section-title">Syllabus progress from your daily records</div>
+ <p class="muted">The official syllabus headings are used as areas for filing study sessions—not as endless checkboxes. Your own subtopics are ticked when you mark them completed in the daily log. Areas such as current affairs remain ongoing; their individual topics accumulate in your record.</p>
+ <div class="actions" id="examTabs"><button class="active" data-exam="oas">OPSC OAS</button><button data-exam="oes">OES</button><button data-exam="pgt">OAV PGT Maths</button></div>
+ <div class="formgrid"><div><label class="field">Search a syllabus area</label><input id="syllabusSearch" placeholder="Search by heading or topic"></div><div><label class="field">Show</label><select id="syllabusFilter"><option value="all">All areas</option><option value="started">Areas with study records</option><option value="completed">Areas with completed topics</option><option value="notstarted">Not started</option></select></div></div>
+ <div id="syllabusTotals" class="muted" style="margin:8px 0"></div><div id="syllabusTree"></div>
+ </div>
+</section>
+
+<section class="page" id="routine">
+ <div class="panel"><div class="section-title">Suggested weekday routine</div><p class="muted">Built around your 10 AM–4 PM school hours, commute and 6–7 PM badminton. Adjust it when school work or personal commitments require it.</p>
+ <div class="routine-row"><time>5:45–7:15 AM</time><div><b>PGT Mathematics</b><div class="muted">Concepts, examples and problem solving</div></div></div>
+ <div class="routine-row"><time>7:15–8:15 AM</time><div><b>Bath, breakfast and preparation</b></div></div>
+ <div class="routine-row"><time>8:15–9:15 AM</time><div><b>OPSC OAS</b><div class="muted">General Studies / CSAT / current affairs</div></div></div>
+ <div class="routine-row"><time>10 AM–4 PM</time><div><b>School duties</b><div class="muted">Revise only previously studied material during available breaks</div></div></div>
+ <div class="routine-row"><time>4:30–5:30 PM</time><div><b>OES</b><div class="muted">Education and Paper I preparation</div></div></div>
+ <div class="routine-row"><time>6–7 PM</time><div><b>Badminton / exercise</b></div></div>
+ <div class="routine-row"><time>7:45–9:15 PM</time><div><b>OPSC OAS / Mains writing</b><div class="muted">Follow the weekly rotation</div></div></div>
+ <div class="routine-row"><time>9:15–9:30 PM</time><div><b>Daily recall and tomorrow's plan</b><div class="muted">Update your calendar log before ending the day</div></div></div>
+ </div>
+ <div class="panel"><div class="section-title">Weekly subject rotation</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr><th>Day</th><th>Morning</th><th>After school</th><th>Night</th></tr><tr><td>Mon</td><td>PGT Maths</td><td>OES Education</td><td>OAS GS-I</td></tr><tr><td>Tue</td><td>PGT Maths</td><td>OES Paper I</td><td>OAS GS-I/current affairs</td></tr><tr><td>Wed</td><td>PGT Maths</td><td>OES Education</td><td>OAS CSAT</td></tr><tr><td>Thu</td><td>PGT Maths</td><td>OES Paper I</td><td>OAS answer writing</td></tr><tr><td>Fri</td><td>PGT Maths</td><td>OES Education</td><td>OAS Education Optional</td></tr><tr><td>Sat</td><td>PGT Maths</td><td>OES timed practice</td><td>OAS GS/Essay</td></tr><tr><td>Sun</td><td>Mock / sectional test</td><td>Weekly revision + error log</td><td>Plan next week</td></tr></table></div></div>
+</section>
+
+<section class="page" id="reports">
+ <div class="grid three">
+  <div class="card"><div class="muted">Total study time</div><div class="metric" id="totalHours">0h</div></div>
+  <div class="card"><div class="muted">Study days</div><div class="metric" id="totalDays">0</div></div>
+  <div class="card"><div class="muted">Topics completed</div><div class="metric" id="totalTopics">0</div></div>
+ </div>
+ <div class="panel"><div class="section-title">Daily study time — last 7 days</div><div id="weeklyBars"></div></div>
+ <div class="panel"><div class="section-title">Study time by examination</div><div id="examBars"></div></div>
+ <div class="panel"><div class="section-title">Monthly growth</div><div id="monthHistory"></div></div>
+</section>
+
+<section class="page" id="backup">
+ <div class="panel"><div class="section-title">Backup and restore</div><p class="muted">Your calendar, daily sessions, checklists and reflections are stored in this browser on this phone. Export a backup regularly.</p>
+ <div class="actions"><button class="primary" onclick="exportBackup()">Export full backup (JSON)</button><button onclick="exportCSV()">Export study records (CSV)</button><label class="upload-label"><span class="buttonlike">Import backup</span><input type="file" accept=".json,application/json" hidden onchange="importBackup(event)"></label></div>
+ <div class="muted" id="backupStatus" style="margin-top:10px"></div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div class="section-title">Daily study target</div><label class="field">Target focused study hours per day</label><input type="number" min="0.5" max="16" step="0.5" id="targetHours" value="4"><div class="actions"><button class="primary" onclick="saveTarget()">Save daily target</button></div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div class="section-title">App installation</div><button id="installButton" class="primary" style="display:none" onclick="installApp()">Install Study Planner</button><p class="muted" id="installMessage">If already installed, refresh the app after publishing updates. In Chrome, use ⋮ → Install app / Add to Home screen.</p>
+ <div class="actions"><button class="warn" onclick="clearAll()">Delete all planner data</button></div>
+ </div>
+</section>
+
+<footer>My Study Planner · Daily progress is built from your own study records.</footer>
+</main>
+
+<script>
+const SYLLABUS={"oas":{"name":"OPSC OCS / OAS","sections":[{"name":"Prelims — GS Paper I (200 marks)","areas":["Current events of national and international importance","History of India and Indian National Movement","History of Odisha and Odia Nationalism","Odisha and Indian Geography — physical, social and economic geography of India and the World","Indian Polity and Governance — Constitution, political system and Panchayati Raj","Public Policy and Rights Issues","Economic and Social Development — sustainable development, poverty, inclusion, demographics and social-sector initiatives","Environmental ecology, biodiversity and climate change","General Science"]},{"name":"Prelims — GS Paper II / CSAT (200 marks; qualifying 33%)","areas":["Comprehension","Interpersonal skills including communication skills","Logical reasoning and analytical ability","Decision making and problem solving","General mental ability","Basic numeracy — Class X level","Data interpretation — charts, graphs, tables and data sufficiency — Class X level"]},{"name":"Mains — Qualifying Odia and English","areas":["Odia — comprehension, précis writing, usage and vocabulary, short essays, translation English to Odia and vice versa","English — comprehension, précis writing, usage and vocabulary, short essays"]},{"name":"Mains — Essay","areas":["Essays on multiple topics","stay close to the subject","arrange ideas in orderly fashion","write concisely and express accurately"]},{"name":"Mains — GS I: Heritage, Culture, History, Geography & Society","areas":["Indian culture — art forms, literature and architecture from ancient to modern times","Odisha temple architecture and socio-cultural development","Bhakti Movement in Odisha","evolution and growth of Odia language and literature","Odisha regional traditions and festivals","Modern Indian history from mid-eighteenth century to present","Freedom struggle — stages and contributors","post-independence consolidation and reorganisation","Kalinga War","Odisha dynasties — Kharavela, Bhauma Karas, Somavamsis, Gangas and Gajapatis","Paika Rebellion, Veer Surendra Sai and 1857","Creation of Odisha Province","Odisha freedom movement and Praja Mandal movements","Odia nationalism and princely-state integration","social reform movements","physical, economic and social geography of India","earthquakes, tsunami, volcanic activity and cyclones","Odisha water, forests, minerals, physiography and riverine system","Indian society and diversity","women, population, poverty, development and urbanisation","globalisation and its effects","tribal population and urban growth in Odisha","social empowerment, communalism, regionalism and secularism"]},{"name":"Mains — GS II: Governance, Constitution, Polity, Social Justice & Inter-State Relations","areas":["Constitution — historical underpinnings, evolution, features, amendments, provisions and basic structure","Union-State functions, federalism and devolution of powers and finances","separation of powers and dispute-redressal mechanisms","comparison with other constitutional schemes","Parliament and State legislatures","Executive and Judiciary","ministries and departments","pressure groups and associations","Representation of People Act","Odisha Right to Public Services Act","Odisha Lokayukta Act","constitutional, statutory, regulatory and quasi-judicial bodies","governance, transparency, accountability, e-governance and citizen charters","role of Central and State Civil Services","Panchayati Raj Institutions in Odisha","Odisha and its neighbourhood","government policies and interventions","development processes, MSMEs and women SHGs","welfare schemes for vulnerable sections","health, education and human resources","poverty, hunger and Sustainable Development Goals"]},{"name":"Mains — GS III: Technology, Economy, Environment, Security & Disaster Management","areas":["Science and technology developments and everyday applications","Indian achievements, indigenisation and new technology","IT, space, computers, robotics, nanotechnology, biotechnology and IPR","Indian economy — planning, resource mobilisation, growth, development and employment","inclusive growth","Government budgeting — India and Odisha","land reforms","liberalisation and industrial policy","infrastructure — energy, posts, roads, airports and railways","industrialisation in Odisha","cropping patterns, irrigation, storage, transport, marketing and e-technology for farmers","farm subsidies, MSP, PDS, buffer stocks and food security","food processing and supply chains","biodiversity conservation, pollution, degradation and EIA","disaster management in India and Odisha","development-extremism linkages and Left Wing Extremism in Odisha","internal security, communication networks, media, cyber security and money laundering","border security, organised crime and terrorism","security forces and agencies"]},{"name":"Mains — GS IV: Ethics, Integrity & Aptitude","areas":["Ethics and human interface — essence, determinants and consequences","dimensions of ethics","private and public relationships","human values and lessons from leaders, reformers and administrators","role of family, society and educational institutions in values","attitude — content, structure, function and influence","moral and political attitudes","social influence and persuasion","civil-service values — integrity, impartiality, non-partisanship, objectivity, dedication, empathy, tolerance and compassion","emotional intelligence in administration","Indian and world moral thinkers and philosophers","case studies on ethical dilemmas and public-service conflicts"]},{"name":"Mains — Optional Education Paper I: Principles of Education & Human Development","areas":["Education — meaning, nature, scope and process in Eastern and Western thought","education as social process","individual and social aims","objectives from elementary to higher education","formal, non-formal and informal education","agencies of education","cognitive, affective and psychomotor domains","Ancient Indian education — Dharma, Artha, Kama and Moksha","Vedic, Buddhist and Islamic systems","Idealism, Naturalism, Realism, Pragmatism, Existentialism and Eclecticism","Gandhi, Tagore, Aurobindo, Vivekananda, Froebel and Herbart","Gopabandhu Das and Radhanath Ray","educational sociology","education and home, community, modernisation, politics, religion, culture and democracy","socialisation, social change, stratification, mobility, equity and equality","disadvantaged groups, SCs, STs, women and rural population","Macaulay’s Minute, Wood’s Despatch, Sargent Plan, Hartog Committee, Calcutta University Commission, Radhakrishnan Commission, Secondary Education Commission and Indian Education Commission","NPE 1968, NPE 1986 and Programme of Action 1992","growth, development and maturation","developmental principles, factors and dimensions","adolescent problems and adult learners","personality theories and approaches","five koshas and Atman","defence mechanisms, stress, frustration and conflict","learning theories — Thorndike, Skinner, Gagne, Ausubel, Bloom, Piaget and Bruner","constructivism and transfer of learning","motivation, Maslow and Atkinson","intelligence — Guilford, Sternberg, Gardner, emotional and spiritual intelligence","creativity, thinking, problem solving, reasoning and imagination","evaluation — placement, formative, diagnostic, summative and CCE","grading, reporting and interpretation","semester system and question bank","central tendency and variability","z, T, C and stanine scores","normal probability curve","programme evaluation monitoring"]},{"name":"Mains — Optional Education Paper II: Trends & Issues in Education","areas":["Educational administration, management and supervision","management functions, interpersonal/informational/decision-making roles, conflict management, job analysis and work motivation","State and Central education administration","UGC, NAAC, AIU, AICTE, NCTE, ICSSR, ICA, CABE, NCERT, NIEPA, CBSE, SCERT, SIET, ELTI, SRC, BSE and CHSE","school complex, school improvement and institutional planning","Odisha Examination Act 1988","equality and universalisation of elementary education","DPEP, Sarva Shiksha Abhiyan and NLM","education finance and expenditure","grant-in-aid and roles of Central, State and local bodies","value and peace education","population and adolescent education","adult and non-formal education","vocationalisation","distance and continuing education","Education for All","work experience and SUPW","environmental education, pollution, health, nutrition and school hygiene","children with special needs and identification","intellectual, visual, hearing and orthopaedic disabilities","learning disability and inclusion","gifted and creative children","disadvantaged children and teacher role","educational technology, systems approach, software and hardware","multimedia and instructional strategies","communication models and barriers","programmed learning, microteaching and simulated teaching","education and national development, modernisation, culture, religion and integration","human-resource development","teacher education, pre-service and in-service","staff development and career advancement","teacher as role model, professional ethics and teacher organisations","NPE 1986 and POA 1992","national system of education, vocational education and minimum learning outcomes","ICT, computers, software, hardware and operating systems","computer-assisted lesson preparation, delivery and evaluation","Internet/WWW for professional development"]}]},"oes":{"name":"Odisha Education Service (School Branch)","sections":[{"name":"Paper I — General Awareness","areas":["Modern Indian History since 1857","personalities in freedom movements of Odisha and India","Social Reform Movements","Indian culture from ancient to modern times","Odisha temple architecture and socio-cultural developments","physical, economic and social geography of India","Odisha physiography and drainage","Odisha water, forest and mineral resources","climate and natural calamities — flood, tsunami, super cyclone and global warming","Constitution of India","Indian political system","Government and politics in Odisha","Panchayati Raj Institutions in Odisha","India and the World — foreign affairs, external security and international organisations","Indian economy — planning, development, reforms and corporate sector","economic and trade issues","IMF, World Bank and WTO","RBI role and functions","Odisha economy after reforms","basic science, inventions and discoveries","IT","recent scientific developments and Artificial Intelligence","national and international current affairs"]},{"name":"Paper I — Odia","areas":["Odia component is present in the supplied notification scan, but its text is partially degraded in OCR","consult the original PDF page for exact Odia wording","include regular Odia reading, grammar and writing practice based on the original notification"]},{"name":"Paper I — General English","areas":["Grammar — verbs, prepositions, adverbs, subject-verb agreement, error correction/recognition and tenses","articles and fill-in-the-blanks","vocabulary, synonyms and antonyms","comprehension","sentence rearrangement"]},{"name":"Paper II — Philosophy of Education","areas":["Contemporary Western educational thought","contemporary Indian educational thought","education and society","social control, social change, socialisation and modernisation","determinants of culture","culture and education"]},{"name":"Paper II — Educational Psychology","areas":["Learning — nature, scope, theories and laws","transfer of training","motivation and functional autonomy of motives","individual differences due to heredity and environment","types and extent of individual differences","educational provision for individual differences","intelligence — nature, measurement, special abilities, tests and administration","personality — definitions, traits and measurement","adjustment, mental health, conflict, frustration, complexes and defence mechanisms","behaviour problems in schools","teacher mental health"]},{"name":"Paper II — Educational Administration & Supervision","areas":["Principles and scope of educational administration","factors determining administration","democratic educational administration","Central, State and local educational authorities — organisation, powers and functions","UGC, NCERT and AICTE","supervision — concept, scope, principles and objectives","planning, organisation and techniques of supervision","educational finance — concept, scope, principles and sources","Central, State, local and private funding","grant-in-aid and educational expenditure","planning, organisation and research","Five-Year Plans","equality of educational opportunity","education of children with disabilities","research in educational administration"]}]},"pgt":{"name":"OAV PGT Mathematics","sections":[{"name":"Foundation & Algebra I","areas":["Sets and representations","empty, finite, infinite and equal sets","subsets and real-number subsets","power and universal sets","Venn diagrams","union, intersection, difference and complement","Cartesian products and relations","domain, codomain and range","functions, mappings, one-one, into, onto and composition","equivalence relations","real-valued functions and graphs — constant, identity, polynomial, rational, modulus, signum and greatest integer","operations on functions","mathematical induction","counting principle, factorials, permutations and combinations","complex numbers, Argand plane, polar form, modulus, argument, square roots, Fundamental Theorem of Algebra, cube roots of unity and triangle inequality","linear inequalities in one and two variables","graphical systems, absolute value, inequalities of means, Cauchy–Schwarz and Tchebycheff","binomial theorem, proof, Pascal triangle, general and middle terms, arbitrary index, coefficient properties and approximations","AP, GP and HP","general terms and sums","AM, GM, HM and relations","special series, arithmetico-geometric, exponential and logarithmic series"]},{"name":"Number Theory, Equations & Matrices","areas":["Peano axioms","first, second and third principles of induction","basis representation theorem","greatest integer function","divisibility tests","Euclid algorithm","unique factorisation","congruence","sum of divisors","Euler totient","Fermat and Wilson theorems","quadratic equations over real and complex systems","roots and coefficients","nature of roots","formation of equations","symmetric functions","reducible equations and applications","polynomial functions","remainder and factor theorems and converses","common roots","matrices and determinants of order 2 and 3","determinant properties and evaluation","area of triangles using determinants","matrix addition and multiplication","adjoint and inverse","consistency and simultaneous linear equations"]},{"name":"Coordinate Geometry & Trigonometry","areas":["2D coordinate system","distance and section formulae","triangle area and collinearity","centroid, incentre, orthocentre and circumcentre","locus and equation","translation of axes","slope, parallel and perpendicular lines, intercepts and forms of line equations","intersection and angle of lines","concurrence","point-to-line distance","angle bisectors","family of lines","homogeneous second-degree equations and pair of lines","circles — standard, general and parametric forms","centre and radius","diameter endpoints","line-circle intersection and tangency","tangent length and equation","family of circles and orthogonal circles","parabola, ellipse and hyperbola","tangent condition y=mx+c","trigonometric angles in degrees and radians","unit-circle definitions and graphs","compound-angle, double-angle and triple-angle identities","trigonometric equations","sine and cosine rules","solving triangles","heights and distances","inverse trigonometric functions — domain, range, principal values, graphs and properties"]},{"name":"Calculus & Differential Equations","areas":["Functions and graphs","limits, continuity and differentiability","derivative and geometric interpretation","sum, difference, product and quotient rules","polynomial and trigonometric derivatives","chain rule","inverse-trigonometric, implicit, exponential, logarithmic and parametric differentiation","logarithmic differentiation","second derivatives","Rolle and Lagrange mean value theorems","rates of change","increasing/decreasing functions","tangents and normals","approximation","maxima and minima","antiderivatives","fundamental algebraic, trigonometric, exponential and logarithmic integrals","substitution, parts, partial fractions and trigonometric identities","definite integrals as limits of sums","Fundamental Theorem of Calculus","definite-integral properties","areas under and between curves — lines, circles, parabolas and ellipses","differential equations — order, degree, general/particular solutions and formation","separation of variables","first-order homogeneous equations","linear differential equations"]},{"name":"Vectors, 3D, Statistics & Probability","areas":["Vectors and scalars","magnitude, direction and direction cosines/ratios","equal, unit, zero, parallel and collinear vectors","position vectors and components","addition and scalar multiplication","section formula","dot product, projection and cross product","3D coordinates, distance and section formula","direction ratios/cosines","Cartesian and vector lines","coplanar and skew lines","shortest distance","Cartesian and vector planes","angles between lines, planes and line-plane","point-plane distance","scalar and vector triple products","vector applications","sphere equations","mean, median and mode for grouped/ungrouped data","mean deviation, variance and standard deviation","frequency distributions with equal means","random experiments, outcomes, sample spaces and events","complement, and/or probabilities","exhaustive and mutually exclusive events","multiplication theorem","conditional probability","independence","Bayes theorem","random variables and distributions","binomial and Poisson distributions"]},{"name":"Advanced Mathematics","areas":["Vector spaces and subspaces","linear independence and bases","row and column spaces","sum and intersection of subspaces","linear transformations and matrices","kernel, image and isomorphism","change of bases","similarity","rank-nullity","inner-product spaces","orthonormal sets","Gram–Schmidt","least squares","eigenvalues and eigenvectors","algebraic and geometric multiplicity","diagonalisation","systems of linear differential equations","generalised inverses and Moore–Penrose inverse","real quadratic forms, reduction, classification, index, signature and extrema","triangular reduction of pairs of forms","singular value decomposition","Jordan canonical form","monotone and bounded-variation functions","real-valued, continuous and absolutely continuous functions","uniform continuity","sequences of functions and uniform convergence","power series and radius of convergence","Riemann–Stieltjes integration","multiple integrals and change of variables","uniform convergence in improper integrals","Leibniz rule","Dirichlet integral and Liouville extension","n-dimensional Euclidean space","open/closed rectangles and compact sets","Bolzano–Weierstrass and Heine–Borel theorems","extrema of several-variable functions","analytic functions and Cauchy–Riemann equations","singularities","Cauchy theorem and integral formula","residues and contour integration","Fourier and Laplace transforms","Mellin inversion theorem"]},{"name":"Teaching Methodology","areas":["Curriculum — meaning, principles, types of organisation and approaches","instructional planning — yearly, unit and lesson plans","textbooks, workbooks, supplementary materials and audio-visual aids","laboratories, library, clubs, museums, community and ICT resources","evaluation — types, tools and characteristics of a good test","Continuous and Comprehensive Evaluation","analysis and interpretation of Scholastic Achievement Tests","communication theory and types","communication and language","classroom communication and barriers"]}]}};
+const EXAM_NAMES={oas:'OPSC OAS',oes:'OES',pgt:'OAV PGT Mathematics'};
+const normalizeExam=v=>{const s=String(v||'').toLowerCase();return s.includes('pgt')?'pgt':s.includes('oes')?'oes':'oas'};
+const DBKEY='study-planner-diary-v1';
+const $=id=>document.getElementById(id);
+const dateKey=d=>{const x=new Date(d);return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-')};
+const today=dateKey(new Date());
+const parseDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const prettyDate=s=>parseDate(s).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const blank=()=>({entries:[],tasks:{},journals:{},manualCompleted:[],targetHours:4,activeTimer:null});
+let db=loadDB();
+let selectedDate=today;
+let visibleMonth=new Date(parseDate(today).getFullYear(),parseDate(today).getMonth(),1);
+let activeExam='oas';
+let installPrompt=null;
+
+function loadDB(){
+ try{const v=JSON.parse(localStorage.getItem(DBKEY));if(v&&Array.isArray(v.entries))return {...blank(),...v}}catch(e){}
+ const d=blank();
+ // Migrate records from the preceding Version 2-style app without deleting their original keys.
+ try{
+  const oldLogs=JSON.parse(localStorage.getItem('planner-v2-logs')||'[]');
+  oldLogs.forEach(x=>d.entries.push({id:newId(),date:x.date||today,exam:normalizeExam(x.exam),section:'Imported previous study log',area:'Previously logged (not mapped to a syllabus area)',topic:x.topic||'Previous study session',minutes:Number(x.minutes)||0,mode:x.quality||'Previous session',done:false,notes:x.notes||''}));
+  const oldTests=JSON.parse(localStorage.getItem('planner-v2-tests')||'[]');
+  oldTests.forEach(x=>d.entries.push({id:newId(),date:x.date||today,exam:normalizeExam(x.exam),section:'Imported previous test log',area:'Previously logged (not mapped to a syllabus area)',topic:x.name||'Previous mock test',minutes:0,mode:'Mock / test analysis',done:false,notes:`Score: ${x.score??''}/${x.max??x.outOf??''}. ${x.review||''}`}));
+  const oldV4=JSON.parse(localStorage.getItem('study-planner-v4')||'null');
+  if(oldV4){
+   (oldV4.sessions||[]).forEach(x=>d.entries.push({id:newId(),date:x.date||today,exam:normalizeExam(x.exam),section:'Imported previous study log',area:'Previously logged (not mapped to a syllabus area)',topic:x.topic||'Previous study session',minutes:Number(x.minutes)||0,mode:x.quality||'Previous session',done:false,notes:x.notes||''}));
+   (oldV4.tests||[]).forEach(x=>d.entries.push({id:newId(),date:x.date||today,exam:normalizeExam(x.exam),section:'Imported previous test log',area:'Previously logged (not mapped to a syllabus area)',topic:x.name||'Previous mock test',minutes:0,mode:'Mock / test analysis',done:false,notes:`Score: ${x.score??''}/${x.outOf??''}. ${x.review||''}`}));
+  }
+ }catch(e){}
+ localStorage.setItem(DBKEY,JSON.stringify(d));
+ return d;
+}
+function saveDB(){localStorage.setItem(DBKEY,JSON.stringify(db));}
+function entriesFor(date){return db.entries.filter(x=>x.date===date)}
+function areaEntries(exam,section,area){return db.entries.filter(x=>x.exam===exam&&x.section===section&&x.area===area)}
+function topicGroups(items){
+ const map=new Map();
+ items.forEach(x=>{const key=(x.topic||'').trim().toLocaleLowerCase();if(!key)return;if(!map.has(key))map.set(key,{topic:x.topic.trim(),entries:[],done:false});const g=map.get(key);g.entries.push(x);if(x.done)g.done=true});
+ return [...map.values()];
+}
+function totalMinutes(items){return items.reduce((n,x)=>n+(Number(x.minutes)||0),0)}
+function showPage(id){
+ const pageButtons=[...document.querySelectorAll('nav button')];
+ const oldId=pageButtons.find(b=>b.classList.contains('active'))?.dataset.page;
+ const oldIndex=pageButtons.findIndex(b=>b.dataset.page===oldId);
+ const newIndex=pageButtons.findIndex(b=>b.dataset.page===id);
+ const direction=newIndex>=0&&oldIndex>=0&&newIndex!==oldIndex?(newIndex>oldIndex?'page-enter-next':'page-enter-prev'):'';
+ document.querySelectorAll('.page').forEach(p=>{
+  p.classList.remove('page-enter-next','page-enter-prev');
+  p.classList.toggle('active',p.id===id);
+ });
+ const target=document.getElementById(id);
+ if(target&&direction){void target.offsetWidth;target.classList.add(direction);setTimeout(()=>target.classList.remove(direction),350);}
+ pageButtons.forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ if(id==='calendar'){renderCalendar();renderDay();}if(id==='syllabus')renderSyllabus();if(id==='reports')renderReports();window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+// Android swipe navigation. Keep vertical scrolling and controls usable.
+(function enableAndroidSwipeNavigation(){
+ if(!/Android/i.test(navigator.userAgent)) return;
+ const pages=[...document.querySelectorAll('nav button')].map(b=>b.dataset.page);
+ const main=document.querySelector('main');
+ if(!main) return;
+ let startX=0,startY=0,startTarget=null,tracking=false;
+ const blockedSelector='input,textarea,select,button,a,[contenteditable="true"],.calendar-grid,.calendar-head,.month-name,.day-cell,[data-no-swipe]';
+ main.addEventListener('touchstart',e=>{
+  if(e.touches.length!==1){tracking=false;return;}
+  const t=e.touches[0];
+  startX=t.clientX;startY=t.clientY;startTarget=e.target;tracking=true;
+ },{passive:true});
+ main.addEventListener('touchend',e=>{
+  if(!tracking||!startTarget||e.changedTouches.length!==1){tracking=false;return;}
+  const t=e.changedTouches[0],dx=t.clientX-startX,dy=t.clientY-startY;
+  const target=startTarget;
+  tracking=false;startTarget=null;
+  if(target.closest(blockedSelector)) return;
+  const scroller=target.closest('table,[data-horizontal-scroll]');
+  if(scroller) return;
+  // Ignore taps, vertical scrolls and short diagonal gestures.
+  if(Math.abs(dx)<55||Math.abs(dy)>75||Math.abs(dx)<Math.abs(dy)*1.35) return;
+  const active=document.querySelector('nav button.active');
+  const index=pages.indexOf(active?.dataset.page);
+  if(index<0) return;
+  const next=index+(dx<0?1:-1);
+  if(next>=0&&next<pages.length) showPage(pages[next]);
+ },{passive:true});
+ main.addEventListener('touchcancel',()=>{tracking=false;startTarget=null;},{passive:true});
+})();
+function setSelectedDate(s){selectedDate=s;renderCalendar();renderDay();}
+function changeMonth(step){visibleMonth.setMonth(visibleMonth.getMonth()+step);renderCalendar()}
+function goToday(){visibleMonth=new Date(parseDate(today).getFullYear(),parseDate(today).getMonth(),1);setSelectedDate(today)}
+function dayHasTasks(s){return (db.tasks[s]||[]).length>0||!!db.journals[s]}
+function renderCalendar(){
+ const y=visibleMonth.getFullYear(),m=visibleMonth.getMonth(),first=new Date(y,m,1),offset=first.getDay(),days=new Date(y,m+1,0).getDate();
+ $('monthTitle').textContent=first.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+ const headers=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+ let out=headers.map(x=>`<div class="cal-weekday">${x}</div>`).join('');
+ for(let i=0;i<offset;i++)out+='<div class="cal-day empty"></div>';
+ for(let d=1;d<=days;d++){
+  const key=dateKey(new Date(y,m,d)),items=entriesFor(key),mins=totalMinutes(items),has=items.length>0,task=dayHasTasks(key);
+  out+=`<button class="cal-day ${key===selectedDate?'selected':''} ${key===today?'today':''} ${has?'has-entries':''}" onclick="setSelectedDate('${key}')"><span class="daynum">${d}</span>${has?`<span class="dot"></span><span class="calmeta">${items.length} sess.</span>`:task?'<span class="dot" style="background:var(--gold)"></span>':'<span class="calmeta">&nbsp;</span>'}</button>`;
+ }
+ $('calendarGrid').innerHTML=out;
+ const monthEntries=db.entries.filter(x=>{const dt=parseDate(x.date);return dt.getFullYear()===y&&dt.getMonth()===m});
+ const daysSet=new Set(monthEntries.map(x=>x.date));
+ const groups=topicGroups(monthEntries.filter(x=>x.done));
+ $('monthSummary').innerHTML=`<div class="mini-stat"><b>${daysSet.size}</b><span>days studied</span></div><div class="mini-stat"><b>${(totalMinutes(monthEntries)/60).toFixed(1)}h</b><span>study time</span></div><div class="mini-stat"><b>${groups.length}</b><span>topics completed</span></div>`;
+}
+function renderDay(){
+ const items=entriesFor(selectedDate),mins=totalMinutes(items),done=topicGroups(items.filter(x=>x.done)).length, tasks=db.tasks[selectedDate]||[];
+ $('selectedDateTitle').textContent=prettyDate(selectedDate);
+ $('dayStatus').textContent=items.length?`${items.length} session${items.length===1?'':'s'} recorded`:'No study logged yet';
+ $('dayStats').innerHTML=`<div class="mini-stat"><b>${(mins/60).toFixed(1)}h</b><span>study time</span></div><div class="mini-stat"><b>${items.length}</b><span>study sessions</span></div><div class="mini-stat"><b>${done}</b><span>topics completed</span></div>`;
+ $('dailyTaskList').innerHTML=tasks.length?tasks.map(t=>`<div class="topic-line"><input type="checkbox" ${t.done?'checked':''} onchange="toggleDailyTask('${t.id}',this.checked)"><span style="${t.done?'text-decoration:line-through;color:#899':''}">${esc(t.text)}</span><button class="warn" onclick="deleteDailyTask('${t.id}')">×</button></div>`).join(''):'<div class="empty">No daily tasks yet. Add one or two realistic tasks for this date.</div>';
+ $('entryCount').textContent=`${items.length} session${items.length===1?'':'s'}`;
+ $('dayEntries').innerHTML=items.length?items.map(x=>`<div class="entry ${x.done?'completed':'pending'}"><div class="entry-top"><div><div class="entry-title">${esc(x.topic)}</div><div class="entry-meta">${esc(EXAM_NAMES[x.exam]||x.exam)} · ${esc(x.section)} · ${esc(x.area)}</div><div class="entry-meta">${esc(x.mode)} · ${x.minutes} min${x.notes?' · '+esc(x.notes):''}</div></div><span class="pill ${x.done?'green':'orange'}">${x.done?'Completed':'In progress'}</span></div><div class="entry-foot"><label class="inline-check" style="margin:0"><input type="checkbox" ${x.done?'checked':''} onchange="toggleEntryDone('${x.id}',this.checked)"> Topic completed</label><button class="warn" onclick="deleteEntry('${x.id}')">Delete</button></div></div>`).join(''):'<div class="empty">No sessions for this date. Add your first study session above.</div>';
+ const j=db.journals[selectedDate]||{};
+ $('journalLearn').value=j.learn||'';$('journalRevise').value=j.revise||'';$('journalNext').value=j.next||'';$('journalFocus').value=j.focus||'';$('journalStatus').textContent=j.saved?'Review saved for this date.':'';
+}
+function addDailyTask(){const text=$('newDailyTask').value.trim();if(!text)return;db.tasks[selectedDate]=db.tasks[selectedDate]||[];db.tasks[selectedDate].push({id:newId(),text,done:false});$('newDailyTask').value='';saveDB();renderCalendar();renderDay();}
+function toggleDailyTask(id,v){(db.tasks[selectedDate]||[]).forEach(t=>{if(t.id===id)t.done=v});saveDB();renderCalendar();renderDay();}
+function deleteDailyTask(id){db.tasks[selectedDate]=(db.tasks[selectedDate]||[]).filter(t=>t.id!==id);saveDB();renderCalendar();renderDay();}
+function updateSectionOptions(){
+ const exam=$('entryExam').value,sections=SYLLABUS[exam].sections;
+ $('entrySection').innerHTML=sections.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('');
+ updateAreaOptions();
+}
+function updateAreaOptions(){
+ const exam=$('entryExam').value,idx=Number($('entrySection').value||0),sec=SYLLABUS[exam].sections[idx]||SYLLABUS[exam].sections[0];
+ $('entryArea').innerHTML=(sec?.areas||[]).map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+}
+let timerInterval=null;
+function elapsedSeconds(){return db.activeTimer?Math.max(0,Math.floor((Date.now()-db.activeTimer.startedAt)/1000)):0}
+function durationLabel(seconds){const h=Math.floor(seconds/3600),m=Math.floor((seconds%3600)/60),s=seconds%60;return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':')}
+function renderStudyTimer(){
+ const active=db.activeTimer,seconds=elapsedSeconds();
+ $('timerDisplay').textContent=durationLabel(seconds);
+ $('timerDisplay').classList.toggle('timer-running',!!active);
+ $('timerState').textContent=active?'Study session in progress':'Ready to study?';
+ $('timerDescription').textContent=active?`${EXAM_NAMES[active.exam]||active.exam} · ${active.topic} · Started ${new Date(active.startedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'Fill in the session details below, then start the timer.';
+ $('timerBadge').textContent=active?'Recording':'Not started';
+ $('timerBadge').classList.toggle('green',!!active);
+ $('startTimerButton').style.display=active?'none':'inline-flex';
+ $('endTimerButton').style.display=active?'inline-flex':'none';
+}
+function startStudyTimer(){
+ if(db.activeTimer){alert('A study timer is already running. End that session before starting another.');return}
+ const exam=$('entryExam').value,sectionIndex=Number($('entrySection').value||0),sec=SYLLABUS[exam].sections[sectionIndex],area=$('entryArea').value,topic=$('entryTopic').value.trim();
+ if(!sec||!area||!topic){alert('Please choose the examination and syllabus area, and enter the topic before starting the timer.');return}
+ db.activeTimer={startedAt:Date.now(),date:selectedDate,exam,section:sec.name,area,topic,mode:$('entryMode').value,notes:$('entryNotes').value.trim(),done:$('entryDone').checked};
+ saveDB();renderStudyTimer();
+}
+function endStudyTimer(){
+ if(!db.activeTimer)return;
+ const active=db.activeTimer,seconds=elapsedSeconds();
+ if(seconds<5&&!confirm('This session is less than 5 seconds. Save it anyway?'))return;
+ const minutes=Math.max(1,Math.round(seconds/60));
+ db.entries.push({id:newId(),date:active.date,exam:active.exam,section:active.section,area:active.area,topic:active.topic,minutes,seconds,mode:active.mode,done:active.done,notes:active.notes});
+ db.activeTimer=null;saveDB();renderStudyTimer();
+ if(selectedDate!==active.date)setSelectedDate(active.date);else renderAll();
+ alert(`Study session saved: ${durationLabel(seconds)} (${minutes} min recorded).`);
+}
+function saveEntry(){
+ if(db.activeTimer){alert('Please end the running timer to save this timed session.');return}
+ const exam=$('entryExam').value,sectionIndex=Number($('entrySection').value||0),sec=SYLLABUS[exam].sections[sectionIndex],area=$('entryArea').value,topic=$('entryTopic').value.trim(),minutes=Number($('entryMinutes').value);
+ if(!sec||!area||!topic||!minutes||minutes<1){alert('Please choose an examination and syllabus area, and enter the topic and duration.');return}
+ db.entries.push({id:newId(),date:selectedDate,exam,section:sec.name,area,topic,minutes,mode:$('entryMode').value,done:$('entryDone').checked,notes:$('entryNotes').value.trim()});
+ saveDB();clearEntryForm();renderAll();
+}
+function clearEntryForm(){$('entryTopic').value='';$('entryMinutes').value=60;$('entryNotes').value='';$('entryDone').checked=false;}
+function toggleEntryDone(id,v){const x=db.entries.find(e=>e.id===id);if(x)x.done=v;saveDB();renderAll();}
+function deleteEntry(id){if(!confirm('Delete this study record?'))return;db.entries=db.entries.filter(e=>e.id!==id);saveDB();renderAll();}
+function saveJournal(){db.journals[selectedDate]={learn:$('journalLearn').value.trim(),revise:$('journalRevise').value.trim(),next:$('journalNext').value.trim(),focus:$('journalFocus').value,saved:true};saveDB();$('journalStatus').textContent='End-of-day review saved for '+prettyDate(selectedDate)+'.';renderCalendar();renderDashboard();}
+function renderSyllabus(){
+ const search=$('syllabusSearch').value.trim().toLowerCase(),filter=$('syllabusFilter').value,exam=activeExam;
+ const sections=SYLLABUS[exam].sections;let allAreas=0,startedAreas=0,doneTopics=0,rendered=0;
+ let html='';
+ sections.forEach((sec,si)=>{
+  const all=sec.areas.map(area=>({area,entries:areaEntries(exam,sec.name,area)}));
+  allAreas+=all.length;
+  const visible=all.filter(x=>{
+    const g=topicGroups(x.entries),has=x.entries.length>0,done=g.filter(y=>y.done).length;
+    const manuallyDone=isSyllabusAreaCompleted(exam,sec.name,x.area);
+    if(has||manuallyDone)startedAreas++;doneTopics+=done;
+    const matches=!search||(x.area+' '+sec.name).toLowerCase().includes(search)||g.some(t=>t.topic.toLowerCase().includes(search));
+    return matches&&(filter==='all'||(filter==='started'&&(has||manuallyDone))||(filter==='completed'&&(done>0||manuallyDone))||(filter==='notstarted'&&(!has&&!manuallyDone)));
+  });
+  if(!visible.length)return;
+  rendered+=visible.length;
+  const started=all.filter(x=>x.entries.length).length;
+  html+=`<details class="section"><summary><span>${esc(sec.name)}</span><span class="pill">${started}/${all.length} areas started</span></summary><div class="section-body">`;
+  visible.forEach(x=>{
+    const groups=topicGroups(x.entries),done=groups.filter(t=>t.done).length,mins=totalMinutes(x.entries),manualDone=isSyllabusAreaCompleted(exam,sec.name,x.area),status=manualDone?'Completed manually':done?`${done} topic${done===1?'':'s'} completed`:x.entries.length?'In progress':'Not started';
+    html+=`<div class="area-row"><div class="row"><div class="area-title">${esc(x.area)}</div><span class="pill ${manualDone||done?'green':x.entries.length?'orange':''}">${status}</span></div><label class="topic-line" style="margin-top:8px"><input type="checkbox" ${manualDone?'checked':''} onchange="toggleSyllabusAreaEncoded('${exam}','${encodeURIComponent(sec.name)}','${encodeURIComponent(x.area)}',this.checked)"><span style="${manualDone?'text-decoration:line-through;color:#87948c':''}">Mark this syllabus portion as completed</span></label><div class="area-meta">${x.entries.length} sessions · ${groups.length} distinct topic${groups.length===1?'':'s'} recorded · ${(mins/60).toFixed(1)} study hours</div>`;
+    if(groups.length){html+=`<div style="margin-top:7px">${groups.map(g=>`<label class="topic-line"><input type="checkbox" ${g.done?'checked':''} onchange="toggleTopicGroupEncoded('${exam}','${encodeURIComponent(sec.name)}','${encodeURIComponent(x.area)}','${encodeURIComponent(g.topic)}',this.checked)"><span style="${g.done?'text-decoration:line-through;color:#87948c':''}">${esc(g.topic)} <small class="muted">(${g.entries.length} session${g.entries.length===1?'':'s'})</small></span></label>`).join('')}</div>`}
+    else html+='<div class="muted" style="margin-top:7px">No study session recorded here yet. It will update automatically when you log a topic under this area.</div>';
+    html+='</div>';
+  });
+  html+='</div></details>';
+ });
+ // compute true totals once, separately from filtered values
+ const examAreas=sections.flatMap(s=>s.areas.map(a=>({section:s.name,area:a,entries:areaEntries(exam,s.name,a)})));
+ const started=examAreas.filter(x=>x.entries.length||isSyllabusAreaCompleted(exam,x.section,x.area)).length;
+ const manuallyCompleted=examAreas.filter(x=>isSyllabusAreaCompleted(exam,x.section,x.area)).length;
+ const completed=examAreas.reduce((n,x)=>n+topicGroups(x.entries).filter(g=>g.done).length,0);
+ const unique=examAreas.reduce((n,x)=>n+topicGroups(x.entries).length,0);
+ $('syllabusTotals').textContent=`${manuallyCompleted} of ${examAreas.length} syllabus portions manually completed · ${completed} of ${unique} logged topics completed · ${started} areas started or completed`;
+ $('syllabusTree').innerHTML=html||'<div class="empty">No matching syllabus areas. Try another search or filter.</div>';
+}
+function isSyllabusAreaCompleted(exam,section,area){
+ return (db.manualCompleted||[]).some(x=>x.exam===exam&&x.section===section&&x.area===area);
+}
+function toggleSyllabusAreaEncoded(exam,section,area,done){
+ toggleSyllabusArea(exam,decodeURIComponent(section),decodeURIComponent(area),done);
+}
+function toggleSyllabusArea(exam,section,area,done){
+ if(!Array.isArray(db.manualCompleted))db.manualCompleted=[];
+ db.manualCompleted=db.manualCompleted.filter(x=>!(x.exam===exam&&x.section===section&&x.area===area));
+ if(done)db.manualCompleted.push({exam,section,area,completedAt:new Date().toISOString()});
+ saveDB();renderAll();
+}
+function toggleTopicGroupEncoded(exam,section,area,topic,done){toggleTopicGroup(exam,decodeURIComponent(section),decodeURIComponent(area),decodeURIComponent(topic),done)}
+function toggleTopicGroup(exam,section,area,topic,done){db.entries.forEach(x=>{if(x.exam===exam&&x.section===section&&x.area===area&&(x.topic||'').trim().toLowerCase()===topic.trim().toLowerCase())x.done=done});saveDB();renderAll();}
+document.querySelectorAll('#examTabs button').forEach(b=>b.onclick=()=>{activeExam=b.dataset.exam;document.querySelectorAll('#examTabs button').forEach(x=>x.classList.toggle('active',x===b));renderSyllabus();});
+$('syllabusSearch').oninput=renderSyllabus;$('syllabusFilter').onchange=renderSyllabus;
+
+function renderDashboard(){
+ const items=entriesFor(today),mins=totalMinutes(items),done=topicGroups(items.filter(x=>x.done)).length;
+ $('todayHours').textContent=(mins/60).toFixed(1)+'h';$('todayTopics').textContent=done;$('todayMinutesHint').textContent=items.length?`${items.length} session${items.length===1?'':'s'} recorded`:'No sessions logged today';
+ const m=parseDate(today),monthEntries=db.entries.filter(x=>{const d=parseDate(x.date);return d.getFullYear()===m.getFullYear()&&d.getMonth()===m.getMonth()});
+ $('monthDays').textContent=new Set(monthEntries.map(x=>x.date)).size;$('monthHours').textContent=(totalMinutes(monthEntries)/60).toFixed(1)+' study hours this month';
+ const target=(Number(db.targetHours)||4)*60,pct=Math.min(100,mins/target*100);
+ $('dashProgress').innerHTML=`<div class="row"><b>Daily study target</b><span>${(mins/60).toFixed(1)} / ${(target/60).toFixed(1)} hours</span></div><div class="progress"><span style="width:${pct}%"></span></div><div class="muted">${done} topics completed · ${items.length} sessions · ${Math.max(0,target-mins)} minutes remaining to target</div>`;
+ const latest=[...db.entries].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id)).slice(0,6);
+ $('recentActivity').innerHTML=latest.length?latest.map(x=>`<div class="topic-line"><span><b>${esc(x.topic)}</b><br><small class="muted">${esc(x.date)} · ${EXAM_NAMES[x.exam]||x.exam} · ${x.minutes} min ${x.done?'· Completed':''}</small></span></div>`).join(''):'<div class="empty">Your study entries will appear here after you log your first session.</div>';
+}
+function renderReports(){
+ const total=totalMinutes(db.entries),days=new Set(db.entries.map(x=>x.date)).size,done=topicGroups(db.entries.filter(x=>x.done)).length;
+ $('totalHours').textContent=(total/60).toFixed(1)+'h';$('totalDays').textContent=days;$('totalTopics').textContent=done;
+ const d0=parseDate(today);const last7=[];
+ for(let i=6;i>=0;i--){const d=new Date(d0);d.setDate(d0.getDate()-i);const key=dateKey(d),mins=totalMinutes(entriesFor(key));last7.push({key,mins,label:d.toLocaleDateString(undefined,{weekday:'short'})})}
+ const max=Math.max(60,...last7.map(x=>x.mins));
+ $('weeklyBars').innerHTML=last7.map(x=>`<div class="barline"><span class="label">${x.label} <small class="muted">${x.key.slice(5)}</small></span><div class="bar"><i style="width:${x.mins/max*100}%"></i></div><b>${(x.mins/60).toFixed(1)}h</b></div>`).join('');
+ const examMins=Object.keys(EXAM_NAMES).map(k=>({k,mins:totalMinutes(db.entries.filter(x=>x.exam===k))})),maxExam=Math.max(60,...examMins.map(x=>x.mins));
+ $('examBars').innerHTML=examMins.map(x=>`<div class="barline"><span class="label">${EXAM_NAMES[x.k]}</span><div class="bar"><i style="width:${x.mins/maxExam*100}%"></i></div><b>${(x.mins/60).toFixed(1)}h</b></div>`).join('');
+ const months={};db.entries.forEach(x=>{const k=x.date.slice(0,7);months[k]=months[k]||[];months[k].push(x)});
+ const monthKeys=Object.keys(months).sort().reverse().slice(0,6);
+ $('monthHistory').innerHTML=monthKeys.length?monthKeys.map(k=>`<div class="topic-line"><span><b>${parseDate(k+'-01').toLocaleDateString(undefined,{month:'long',year:'numeric'})}</b><br><small class="muted">${new Set(months[k].map(x=>x.date)).size} study days · ${months[k].length} sessions · ${topicGroups(months[k].filter(x=>x.done)).length} completed topics</small></span><b>${(totalMinutes(months[k])/60).toFixed(1)}h</b></div>`).join(''):'<div class="empty">Monthly growth will appear once you start recording sessions.</div>';
+}
+function renderAll(){renderCalendar();renderDay();renderDashboard();if($('syllabus').classList.contains('active'))renderSyllabus();if($('reports').classList.contains('active'))renderReports();}
+function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function exportBackup(){download('study-planner-calendar-backup.json',JSON.stringify({...db,exportedAt:new Date().toISOString()},null,2),'application/json');$('backupStatus').textContent='Backup file created.'}
+function exportCSV(){const rows=[['Date','Exam','Syllabus section','Syllabus area','Topic','Activity','Minutes','Completed','Notes'],...db.entries.map(x=>[x.date,EXAM_NAMES[x.exam]||x.exam,x.section,x.area,x.topic,x.mode,x.minutes,x.done?'Yes':'No',x.notes||''])];download('study-planner-daily-records.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n'),'text/csv')}
+async function importBackup(event){const file=event.target.files[0];if(!file)return;try{const v=JSON.parse(await file.text());if(!Array.isArray(v.entries))throw new Error('This backup does not contain study entries.');db={...blank(),...v};saveDB();renderAll();$('backupStatus').textContent='Backup restored successfully.'}catch(e){alert('Unable to restore this backup. Please select a valid Study Planner JSON backup.')}event.target.value=''}
+function saveTarget(){const n=Number($('targetHours').value);if(!n||n<.5||n>16){alert('Choose a daily target between 0.5 and 16 hours.');return}db.targetHours=n;saveDB();renderDashboard();alert('Daily target saved.')}
+function clearAll(){if(!confirm('Delete every calendar entry, daily task, reflection and progress record from this device? Export a backup first if you need it.'))return;localStorage.removeItem(DBKEY);location.reload()}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installButton').style.display='inline-block'});
+async function installApp(){if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installButton').style.display='none';}
+$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+$('targetHours').value=db.targetHours||4;
+updateSectionOptions();
+renderAll();renderSyllabus();renderReports();renderStudyTimer();
+timerInterval=setInterval(renderStudyTimer,1000);
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+</script>
+</body>
+</html>
